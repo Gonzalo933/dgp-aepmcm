@@ -1,0 +1,92 @@
+\documentclass[]{article}
+\usepackage[left=3cm, right=2cm, top=3cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{amsthm, amsmath, amssymb, array}
+\usepackage{bm}
+\usepackage[makeroom]{cancel}
+
+\DeclareMathOperator{\EX}{\mathbb{E}}% expected value
+\newcommand{\mbf}[1]{\ensuremath{\mathbf{#1}}}
+
+%opening
+\title{Multiclass Classification}
+\author{Gonzalo Hernández-Muñoz}
+
+\begin{document}
+
+\maketitle
+
+\section{How to calculate $\ln \mathcal{Z}$ for multiclass classification}
+NOTE: This document are just my handwritten notes on how to calculate the output for the DGP and what the equivalences between the code and equations are. Some things may not be totally accurate and there are some notation errors. \linebreak
+
+We have to calculate:
+\begin{align}
+\mathcal{Z}_i &= \ln \EX_{q^\backslash}[p({y}_i | \mbf{h}_i^L) \prod_{l=1}^L q^\backslash(\mbf{h}_i^l| \mbf{h}_i^{l-1})] \\
+&= \int p({y}_i | \mbf{h}_i^L) \prod_{l=1}^L q^\backslash(\mbf{h}_i^l | \mbf{h}_i^{l-1}) \quad d\mbf{h}_i^1 \, \dots \, d\mbf{h}_i^L \nonumber
+\end{align}
+At the output node we only need to calculate:
+\begin{equation}
+\ln \int p({y}_i | \mbf{h}_i^L) q^\backslash(\mbf{h}_i^L) \quad  d\mbf{h}_i^L
+\end{equation}
+Where, for multiclass classification, equals:
+\begin{equation}
+\label{eq:output_node}
+\ln \int  \left[ \prod_{k\neq y_i} \Theta(\mbf{h}_{i, y_i}^L - \mbf{h}_{i,k}^L) \right]
+  \prod_{k=1}^C \mathcal{N}(\mbf{h}_{i,k}^L | \bm \mu_{i,k}, \mbf{v}_{i,k} ) 
+  \quad d\mbf{h}_{i,k=1}^L \, \dots \, d\mbf{h}_{i,k=C}^L
+\end{equation}
+Where it is assumed that in the last layer $ L $ there are as many nodes as number of classes. The class chosen for the $i$-th point ($ y_i $) will be the one in which the output value for the corresponding node is bigger.
+$$ y_i = \text{arg} \ \text{max}_k \ \mbf{h}_{i, k}^L \quad  k \in \{1\, \dots \, C\} $$
+The first term (in square brackets) is one if and only if all the output values for the $i$-th example, i.e $ \mbf{h}^L_{i,k} $ for $ k \in \{1\, \dots \, C\} $ except $ k = y_i $. (that means, one if the point is correctly classified). Eq. \ref{eq:output_node} can be calculated as [Villacampa-Calvo, Carlos, and Daniel Hernández-Lobato. ''Scalable multi-class Gaussian process classification using expectation propagation.'']:
+(omitting subscript $i$ except for the training example)
+\begin{equation}
+\label{eq:output_cdf}
+\ln \int \left[ \prod_{k\neq y_i} \Phi \left( \frac{\mbf{h}_{y_i}^L - \bm \mu_k}{\sqrt{\mbf{v}_k}} \right) \right] \mathcal{N}(\mbf{h}_{y_i}^L | \bm \mu_{y_i}, \mbf{v}_{y_i} ) \quad d\mbf{h}^L_{y_i}
+\end{equation}
+Where for example $\bm \mu_{y_i} $ means, ``the mean for the output node k where $k=y_i$''. And $\Phi(\cdot)$ is the CDF of a Gaussian. Now we only need to calculate a one dimensional integral (way easier).Continuing expanding \ref{eq:output_cdf}
+\begin{equation}
+\ln \int \frac{1}{\sqrt{2 \pi \mbf{v}_{y_i}}} \exp\left[ \frac{-(\mbf{h}_{y_i}^L - \bm \mu_{y_i})^2}{2 \mbf{v}_{y_i} } \right] \prod_{k\neq y_i} \Phi \left( \frac{\mbf{h}_{y_i}^L - \bm \mu_k}{\sqrt{\mbf{v}_k}} \right) \quad d\mbf{h}^L_{y_i}
+\end{equation}
+(we omit the $L$ superscript, all output values are from the last layer).
+We now wan to calculate the integral by using Gauss-Hermite quadrature. We need to make a variable change.
+\begin{align}
+\mbf{x} &= \frac{\mbf{h}_{y_i}^L - \bm \mu_{y_i}}{\sqrt{2\mbf{v}_{y_i}}} \iff \mbf{h}_{y_i}^L = \underbrace{\sqrt{2\mbf{v}_{y_i}} \ \mbf{x} + \bm \mu_{y_i}}_\text{Called X in the code} \\
+d\mbf{h}^L_{y_i} &= \sqrt{2\mbf{v}_{y_i}} \ d\mbf{x}
+\end{align}
+Here, $ \mbf{x} $ are the points of the Gauss-Hermite quadrature (not related to the training points) and called \textbf{gh\_x}  in the code.
+As our method propagates $ S $ samples, we can also include the average over them ($ \bm \mu_{y_i}  $ will be of size $S,N,1$ in the code).
+\begin{equation}
+\ln \frac{1}{S} \sum_{s=1}^S \int \frac{1}{\sqrt{\pi}\cancel{\sqrt{2  \mbf{v}_{y_i}}}} \exp[x^{-2}] \prod_{k\neq y_i} \Phi \left(\underbrace{ \frac{\sqrt{2\mbf{v}_{y_i}} \ \mbf{x} + \bm \mu_{y_i} - \bm \mu_k}{\sqrt{\mbf{v}_k}}}_\text{Called dist in the code\footnotemark} \right) \cancel{\sqrt{2 \mbf{v}_{y_i}}} d\mbf{x} 
+\end{equation}
+We can apply now the Gauss-Hermite quadrature and approximate the integral. (we introduce now the weights $\mbf{w}$, called \textbf{gh\_w} )
+\begin{align}
+&\ln \left[ \frac{1}{S} \sum_{s=1}^S \left( \frac{1}{\sqrt{\pi}}  \left[ \sum_{w \in \mbf{w}} w \prod_{k\neq y_i} \Phi \left( \frac{\sqrt{2\mbf{v}_{y_i}} \ \mbf{x} + \bm \mu_{y_i} - \bm \mu_k}{\sqrt{\mbf{v}_k}}  \right) \right] \right) \right] \nonumber \\
+&= \ln \left[ \frac{1}{S\sqrt{\pi}} \sum_{s=1}^S \left[ \sum_{w \in \mbf{w}} w \prod_{k\neq y_i} \Phi \left( \frac{\sqrt{2\mbf{v}_{y_i}} \ \mbf{x} + \bm \mu_{y_i} - \bm \mu_k}{\sqrt{\mbf{v}_k}}  \right) \right]  \right] \nonumber
+\end{align}
+Note that even that it is not included in the notation, $ \bm \mu_k \,, \mbf{v}_{y_i} \,, \mbf{v}_k \text{etc} $ all depend on the samples.
+\begin{align}
+&= \ln \left[ \sum_{s=1}^S \left[ \sum_{w \in \mbf{w}} w \prod_{k\neq y_i} \Phi \left( \frac{\sqrt{2\mbf{v}_{y_i}} \ \mbf{x} + \bm \mu_{y_i} - \bm \mu_k}{\sqrt{\mbf{v}_k}}  \right) \right]  \right] - \ln \sqrt{\pi} - \ln S \nonumber
+\end{align}
+\footnotetext{Except that in the code it is calculated for all classes and in the equation it only needs to be calculated for all the classes except the one of the training point}.
+
+It can be made more robust by introducing:
+\begin{align}
+&= \ln \left[ \sum_{s=1}^S \left[ \sum_{w \in \mbf{w}} w \exp\left\{ \sum_{k\neq y_i} \ln \Phi \left( \frac{\sqrt{2\mbf{v}_{y_i}} \ \mbf{x} + \bm \mu_{y_i} - \bm \mu_k}{\sqrt{\mbf{v}_k}}  \right) \right\} \right]  \right] - \ln \sqrt{\pi} - \ln S \nonumber
+\end{align}
+
+and the sum $ \sum_{w \in \mbf{w}} $ can be calculated as a matrix product (denoted by $\cdot$).
+\begin{equation}
+= \ln \left[ \sum_{s=1}^S  \mbf{w} \cdot \exp\left\{ \sum_{k\neq y_i} \ln \Phi \left( \frac{\sqrt{2\mbf{v}_{y_i}} \ \mbf{x} + \bm \mu_{y_i} - \bm \mu_k}{\sqrt{\mbf{v}_k}}  \right) \right\}   \right] - \ln \sqrt{\pi}- \ln S \nonumber
+\end{equation}
+
+\section{Prediction}
+For prediction we have to calculate
+\begin{equation}
+\int p({y_i}=c | \mbf{h}_{i,c}^L) \prod_{l=1}^L q(\mbf{h}_{i,c}^l | \mbf{h}_{i,c}^{l-1}) \quad d\mbf{h}_{i,c}^1 \, \dots \, d\mbf{h}_{i,c}^L \nonumber
+\end{equation}
+For all classes $ c \in \{ 1\,, \dots \,, K \} $. Note that this procedure is the same as in the other section but using the posterior $ q $ instead of the cavity $ q^\backslash $. However this does not change the output node as the gp nodes are the one in charge of calculating $ \mbf{h}_{i,c}^L $  (for the last layer) with the corresponding distribution. (We do have to calculate each of the probabilities for each of the classes individually and the choose the one with highest probability). That is, for a test point $ y_\star $
+\begin{equation}
+y_\star \gets \text{arg} \ \text{max}_k \ p(y_\star=k) \quad  k \in \{1\, \dots \, C\} 
+\end{equation}
+
+\end{document}
