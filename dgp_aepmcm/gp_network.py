@@ -316,24 +316,42 @@ class DGPNetwork:
             new_layer.stack_on_previous_layer(self.layers[-1])
             self.layers.append(new_layer)
 
-    def add_output_layer_classification(
-        self, *, use_norm_cdf=False, noise_in_labels=False, noise_in_labels_trainable=True
-    ):
-        """ Add an output layer for regression to the network
-
-        The likelihood is given by a step function, that combined with a Gaussian dist.
-        for the output of the layers, yields a Gaussian cdf.
+    def add_output_layer_binary_classification(self, use_norm_cdf=False):
+        """Adds an output layer for binary classification to the network.
 
         Args:
             use_norm_cdf (Boolean): Add bias term (+1) to the variance of f^L (+0 if False).
                 if use_norm_cdf == True then likelihood p(y | f^L) will be norm.cdf(y_train * f^L)
                 if use_norm_cdf == False then likelihood p(y | f^L) will be heavyside(y_train * f^L)
-                only used in binary classification.
+        """
+        self._add_output_layer_classification(use_norm_cdf=use_norm_cdf)
+
+    def add_output_layer_multiclass_classification(
+        self, noise_in_labels=False, noise_in_labels_trainable=True
+    ):
+        """Adds an output layer for multiclass classification to the network.
+
+        Args:
             noise_in_labels (Boolean): If true the likelihood will take into account
-                that there may be wrong labeled examples. Using a robust multiclass likelihood (as in GPflow)
+                that there may be wrong labeled examples.
+                Using a robust multiclass likelihood (as in GPflow when using Multiclass likelihood).
             noise_in_labels_trainable (Boolean): Specifies if the noise in labels is a trainable parameter.
-                For fair comparison with DGP-VI it should be set to False,
-                for other tasks it should be set to True as it makes the network more robust
+                Note: For fair comparison with DGP-VI it should be set to False,
+                for other tasks it should be set to True as it makes the network more robust.
+                This parameter is ignored is noise_in_labels=False.
+        """
+        self._add_output_layer_classification(
+            noise_in_labels=noise_in_labels,
+            noise_in_labels_trainable=noise_in_labels_trainable,
+        )
+
+    def _add_output_layer_classification(
+        self, *, use_norm_cdf=False, noise_in_labels=False, noise_in_labels_trainable=True
+    ):
+        """ Private function. Refer to either:
+            add_output_layer_binary_classification()
+
+            add_output_layer_multiclass_classification()
 
         """
         assert self.layers, "Network should have an input node"
