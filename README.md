@@ -1,14 +1,16 @@
 # DGP-AEPMCM
 Code for the paper: "Deep Gaussian Processes using Expectation Propagation and Monte Carlo Methods"
 
+## Requirements
+- Python>=3.6
+- Tensorflow>=1.12.0 (Although it may work with older versions). (**UPDATE: Using tensorflow 1.13 triggers some warnings.**)
+
+
 ## Installation
 ```shell
 pip install --user .
 ```
 
-## Requirements
-- Python>=3.6
-- Tensorflow>=1.12.0 (Although it may work with older versions). (**UPDATE: Using tensorflow 1.13 triggers some warnings.**)
 
 ## Known issues
 
