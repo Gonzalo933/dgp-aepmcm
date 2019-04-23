@@ -11,7 +11,11 @@ Code for the paper: "Deep Gaussian Processes using Expectation Propagation and M
 pip install --user .
 ```
 
+## Experiments
+Datasets and splits for reproducing the experiments can be downloaded from here:
+- [Regression datasets and splits.](https://gonzalohernandezmunoz.com/downloads/machine_learning/datasets_tfm.zip)
 
+- [Binary classification datasets and splits.](https://gonzalohernandezmunoz.com/downloads/machine_learning/datasets_binary_classification.tar.gz)
 ## Known issues
 
 - Sometimes the cholesky decomposition fails:
