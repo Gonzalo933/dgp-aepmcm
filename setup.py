@@ -13,7 +13,7 @@ def read(fname):
 
 
 setup(
-    name="dgp-aep-mcm",
+    name="dgp-aepmcm",
     version="0.1",
     author="Gonzalo Hernandez-Muñoz, Daniel Hernandez-Lobato",
     author_email="gonzalo.hernandez@uam.es, daniel.hernandez@uam.es",
