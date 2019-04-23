@@ -16,6 +16,13 @@ Datasets and splits for reproducing the experiments can be downloaded from here:
 - [Regression datasets and splits.](https://gonzalohernandezmunoz.com/downloads/machine_learning/datasets_tfm.zip)
 
 - [Binary classification datasets and splits.](https://gonzalohernandezmunoz.com/downloads/machine_learning/datasets_binary_classification.tar.gz)
+
+## Docs
+Code is partially documented, I'm working on it. Other documentation can be found here:
+- [Notes on multiclass classification](dgp_aepmcm/nodes/latex/output_node_multiclass_info.pdf)
+- [Master's thesis pdf](https://gonzalohernandezmunoz.com/downloads/machine_learning/Gonzalo_Hernandez_master_thesis.pdf)
+- [Presentation](https://gonzalohernandezmunoz.com/downloads/machine_learning/Gonzalo_Hernandez_master_thesis_presentation.pdf)
+
 ## Known issues
 
 - Sometimes the cholesky decomposition fails:
