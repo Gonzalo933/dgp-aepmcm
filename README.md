@@ -3,7 +3,7 @@ Code for the paper: "Deep Gaussian Processes using Expectation Propagation and M
 
 ## Requirements
 - Python>=3.6
-- Tensorflow>=1.12.0 (Although it may work with older versions). (**UPDATE: Using tensorflow 1.13 triggers some warnings.**)
+- Tensorflow>=1.11.0 (Although it may work with older versions). (**UPDATE: Using tensorflow 1.13 triggers some warnings.**)
 
 
 ## Installation

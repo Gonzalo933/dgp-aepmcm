@@ -26,7 +26,7 @@ setup(
     long_description=read("README.md"),
     install_requires=[
         "numpy",
-        "tensorflow>=1.12.0",
+        "tensorflow>=1.11.0",
         "scipy",
     ],  # Requires 1.12.0 but not available in pip. conda install -c conda-forge tensorflow=1.12.0
 )
